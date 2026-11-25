@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-title">Student Dashboard</div>
+        <div class="topbar-user">
+          <span class="badge badge-simulated">Simulated GPS</span>
+          <span id="user-display" style="font-weight: 500; font-size: 0.9rem;"></span>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- Live Status Hero Chip -->
+        <div class="card" style="background: linear-gradient(135deg, var(--blue-900), var(--blue-700)); color: white; padding: 1.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <span class="badge" style="background: rgba(255,255,255,0.2); color: white;">LIVE STATUS</span>
+                <span class="badge badge-simulated">SIMULATED GPS</span>
+              </div>
+              <h2 id="hero-bus-number" style="font-size: 1.75rem; font-weight: 700;">Bus TN-2</h2>
+              <p id="hero-route-summary" style="opacity: 0.9; font-size: 0.95rem; margin-top: 0.25rem;">Approaching your stop • SRM University-AP (Campus)</p>
+            </div>
+            <div style="text-align: right;">
+              <a href="/tracking.html" class="btn" style="background: white; color: var(--blue-900); font-weight: 600;">
+                <span>📍</span> Open Live Map
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student & Transport Overview Grid -->
+        <div class="grid-2">
+          <!-- Student Profile Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Student Information</h3>
+              <span id="fee-badge" class="badge badge-paid">PAID</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">STUDENT NAME</span>
+                <strong id="student-name" style="font-size: 1.05rem;">Loading...</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">REGISTER NUMBER</span>
+                <span id="student-reg" style="font-weight: 500;">-</span>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">EMAIL</span>
+                <span id="student-email" style="font-weight: 500;">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bus & Driver Card -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Allocated Vehicle & Driver</h3>
+              <span class="badge badge-live">MORNING TRIP</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <div>
+                  <span style="font-size: 0.8rem; color: var(--muted); display: block;">BUS NUMBER</span>
+                  <strong id="bus-num" style="font-size: 1.05rem;">-</strong>
+                </div>
+                <div>
+                  <span style="font-size: 0.8rem; color: var(--muted); display: block;">VEHICLE REGISTRATION</span>
+                  <span id="bus-reg" class="badge" style="background: var(--blue-50); color: var(--blue-700);">-</span>
+                </div>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">DRIVER</span>
+                <span id="driver-name" style="font-weight: 600;">-</span>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">DRIVER CONTACT</span>
+                <a id="driver-phone-link" href="#" style="color: var(--blue-600); font-weight: 600; text-decoration: none;">📞 <span id="driver-phone">-</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route & Boarding Stop Details -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Your Boarding Point & Schedule</h3>
+            <a href="/route.html" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.85rem;">View Full Route</a>
+          </div>
+          <div class="grid-3">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--muted); display: block;">BOARDING STOP</span>
+              <strong id="boarding-stop" style="color: var(--blue-700); font-size: 1.1rem;">-</strong>
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--muted); display: block;">DESTINATION</span>
+              <strong style="color: var(--text);">SRM University-AP (Campus)</strong>
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--muted); display: block;">SCHEDULED ARRIVAL AT CAMPUS</span>
+              <strong style="color: var(--text);">08:45 IST</strong>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div id="mobile-nav-container"></div>
+  </div>
+
+  <script type="module">
+    import { requireAuth } from '/js/auth.js';
+    import { renderNavigation } from '/js/nav.js';
+    import { apiRequest } from '/js/api.js';
+
+    async function init() {
+      const user = await requireAuth('STUDENT');
+      if (!user) return;
+      renderNavigation('dashboard', user.role);
+
+      document.getElementById('user-display').textContent = user.name || user.email;
+
+      try {
+        const d = await apiRequest('/api/student/dashboard');
+
+        document.getElementById('student-name').textContent = d.name;
+        document.getElementById('student-reg').textContent = d.regNo;
+        document.getElementById('student-email').textContent = d.email;
+
+        const feeBadge = document.getElementById('fee-badge');
+        feeBadge.textContent = d.feeStatus;
+        if (d.feeStatus === 'PAID') feeBadge.className = 'badge badge-paid';
+        else if (d.feeStatus === 'PENDING') feeBadge.className = 'badge badge-pending';
+        else feeBadge.className = 'badge badge-overdue';
+
+        if (d.allocated) {
+          document.getElementById('hero-bus-number').textContent = d.displayBusNumber;
+          document.getElementById('bus-num').textContent = d.displayBusNumber;
+          document.getElementById('bus-reg').textContent = d.registrationNo;
+          document.getElementById('driver-name').textContent = d.driverName || 'N/A';
+          document.getElementById('driver-phone').textContent = d.driverPhone || 'N/A';
+          document.getElementById('driver-phone-link').href = 'tel:' + (d.driverPhone || '');
+          document.getElementById('boarding-stop').textContent = d.boardingStop;
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

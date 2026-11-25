@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Route — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+      list-style: none;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      bottom: 10px;
+      left: 7px;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -2rem;
+      top: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--blue-600);
+      border: 3px solid white;
+      box-shadow: 0 0 0 1px var(--border);
+    }
+    .timeline-item.passed .timeline-dot {
+      background: var(--muted);
+    }
+    .timeline-item.active-stop .timeline-dot {
+      background: var(--ok);
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+    }
+    .timeline-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius-sm);
+    }
+    .timeline-content.highlight {
+      border-color: var(--blue-600);
+      background-color: var(--blue-50);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-title">Route Schedule & Timetable</div>
+        <div class="topbar-user">
+          <span class="badge badge-simulated">Simulated GPS</span>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 id="route-title" style="font-size: 1.25rem; color: var(--blue-900);">Loading Route...</h2>
+              <p style="color: var(--muted); font-size: 0.875rem;">Timetable as of 31-08-2026 (IST 24h)</p>
+            </div>
+            <a href="/tracking.html" class="btn btn-primary">📍 Track Live</a>
+          </div>
+
+          <ul id="timeline-list" class="timeline">
+            <!-- Rendered dynamically -->
+          </ul>
+        </div>
+      </main>
+    </div>
+    <div id="mobile-nav-container"></div>
+  </div>
+
+  <script type="module">
+    import { requireAuth } from '/js/auth.js';
+    import { renderNavigation } from '/js/nav.js';
+    import { apiRequest } from '/js/api.js';
+
+    async function init() {
+      const user = await requireAuth('STUDENT');
+      if (!user) return;
+      renderNavigation('route', user.role);
+
+      try {
+        const data = await apiRequest('/api/student/route');
+        document.getElementById('route-title').textContent = `${data.routeName} (${data.routeId})`;
+
+        const list = document.getElementById('timeline-list');
+        list.innerHTML = data.stops.map((s, idx) => `
+          <li class="timeline-item ${s.isMyBoardingStop ? 'active-stop' : ''}">
+            <div class="timeline-dot"></div>
+            <div class="timeline-content ${s.isMyBoardingStop ? 'highlight' : ''}">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong style="font-size: 1.05rem;">${s.name}</strong>
+                  ${s.isMyBoardingStop ? '<span class="badge badge-live" style="margin-left: 0.5rem;">YOUR STOP</span>' : ''}
+                  ${s.isCampus ? '<span class="badge" style="background: #F3E8FF; color: #7E22CE; margin-left: 0.5rem;">FINAL DESTINATION</span>' : ''}
+                </div>
+                <div style="font-weight: 600; color: var(--blue-700);">${s.scheduledTime} IST</div>
+              </div>
+            </div>
+          </li>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

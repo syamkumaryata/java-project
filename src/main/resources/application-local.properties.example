@@ -1,0 +1,5 @@
+# Google OAuth Client ID
+app.google.client-id=your-client-id.apps.googleusercontent.com
+app.auth.mode=google
+app.university-api.api-key=real-api-key
+app.university-api.base-url=https://api.university.edu

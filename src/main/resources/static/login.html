@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: 2.5rem 2rem;
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .login-header .logo {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .demo-box {
+      background-color: var(--blue-50);
+      border: 1px solid var(--blue-100);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .form-select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: white;
+      font-size: 0.95rem;
+    }
+    .error-card {
+      margin-top: 1.25rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo">🚌</div>
+        <h1 style="color: var(--blue-900); font-size: 1.5rem; font-weight: 700;">College Bus Tracker</h1>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem;">SRM University-AP Transport Portal</p>
+      </div>
+
+      <!-- Demo Mode Banner -->
+      <div id="demo-banner" class="alert-banner alert-warn" style="display: none;">
+        <span>⚠️</span>
+        <div style="font-size: 0.85rem;">
+          <strong>DEMO MODE ACTIVE</strong><br>
+          Select an authorized test student or admin account below.
+        </div>
+      </div>
+
+      <!-- Error Message Box -->
+      <div id="error-box" class="alert-banner alert-danger error-card">
+        <span id="error-icon">⚠️</span>
+        <div style="font-size: 0.875rem;">
+          <strong id="error-title">Access Denied</strong>
+          <p id="error-message" style="margin-top: 0.25rem;"></p>
+        </div>
+      </div>
+
+      <!-- Google Sign-In Container (when configured) -->
+      <div id="google-login-section" style="display: none; text-align: center; margin-bottom: 1.5rem;">
+        <div id="g_id_onload"></div>
+        <div class="g_id_signin" data-type="standard" data-size="large" data-width="360" data-theme="outline"></div>
+      </div>
+
+      <!-- Demo Login Form -->
+      <div id="demo-login-section" class="demo-box" style="display: none;">
+        <form id="demo-login-form">
+          <div class="form-group">
+            <label class="form-label" for="demo-account-select">Select Demo Account</label>
+            <select id="demo-account-select" class="form-select">
+              <option value="">-- Choose Account --</option>
+              <option value="demo1@example.test">Demo Student A (AP26DEMO0001 - TN-2 Duggirala) [Login OK]</option>
+              <option value="demo2@example.test">Demo Student B (AP26DEMO0002 - TN-2 Ravindrapadu) [Login OK]</option>
+              <option value="demo3@example.test">Demo Student C (AP26DEMO0003 - TN-3 Kotha Vanthana) [Login OK]</option>
+              <option value="demo4@example.test">Demo Student D (AP26DEMO0004 - TN-4 Duggirala) [Login OK]</option>
+              <option value="demo5@example.test">Demo Student E (AP26DEMO0005 - TN-4 Mangalagiri) [Login OK]</option>
+              <option value="demo6@example.test">Demo Student F (AP26DEMO0006 - Fee Pending) [Denied]</option>
+              <option value="demo7@example.test">Demo Student G (AP26DEMO0007 - Transport Inactive) [Denied]</option>
+              <option value="unknown@example.test">Unknown User (Unregistered) [Denied]</option>
+              <option value="admin@example.test">Demo Admin (Transport Staff) [Admin Access]</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In with Demo Account</button>
+        </form>
+      </div>
+
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <span class="badge badge-simulated">Simulated GPS Environment</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiRequest, setCsrfToken } from '/js/api.js';
+
+    const demoBanner = document.getElementById('demo-banner');
+    const demoSection = document.getElementById('demo-login-section');
+    const googleSection = document.getElementById('google-login-section');
+    const errorBox = document.getElementById('error-box');
+    const errorTitle = document.getElementById('error-title');
+    const errorMessage = document.getElementById('error-message');
+
+    function showError(code, message) {
+      errorBox.style.display = 'flex';
+      errorTitle.textContent = formatErrorCode(code);
+      errorMessage.textContent = message;
+    }
+
+    function formatErrorCode(code) {
+      switch (code) {
+        case 'FEE_NOT_PAID': return 'Transport Fee Pending';
+        case 'TRANSPORT_NOT_ENROLLED': return 'Transport Service Inactive';
+        case 'NO_ALLOCATION': return 'No Bus Allocated';
+        case 'NOT_FOUND': return 'Student Record Not Found';
+        default: return 'Login Failed (' + code + ')';
+      }
+    }
+
+    async function init() {
+      try {
+        const config = await apiRequest('/api/config/public');
+        if (config.authMode === 'demo') {
+          demoBanner.style.display = 'flex';
+          demoSection.style.display = 'block';
+        } else if (config.googleClientId) {
+          googleSection.style.display = 'block';
+          // Initialize Google Identity Services button
+          window.handleGoogleCredentialResponse = async (response) => {
+            try {
+              const res = await apiRequest('/api/auth/google', {
+                method: 'POST',
+                body: JSON.stringify({ credential: response.credential })
+              });
+              setCsrfToken(res.csrfToken);
+              window.location.href = res.role === 'ADMIN' ? '/admin.html' : '/dashboard.html';
+            } catch (err) {
+              showError(err.code || 'AUTH_ERROR', err.message);
+            }
+          };
+
+          google.accounts.id.initialize({
+            client_id: config.googleClientId,
+            callback: window.handleGoogleCredentialResponse
+          });
+          google.accounts.id.renderButton(
+            document.querySelector(".g_id_signin"),
+            { theme: "outline", size: "large", width: 360 }
+          );
+        }
+      } catch (err) {
+        showError('CONFIG_ERROR', 'Could not load system configuration.');
+      }
+    }
+
+    document.getElementById('demo-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+      const email = document.getElementById('demo-account-select').value;
+      if (!email) return;
+
+      try {
+        const res = await apiRequest('/api/auth/demo', {
+          method: 'POST',
+          body: JSON.stringify({ email })
+        });
+        setCsrfToken(res.csrfToken);
+        window.location.href = res.role === 'ADMIN' ? '/admin.html' : '/dashboard.html';
+      } catch (err) {
+        showError(err.code, err.message);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

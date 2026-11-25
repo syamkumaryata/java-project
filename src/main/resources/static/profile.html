@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-title">User Profile & Session</div>
+        <div class="topbar-user">
+          <span class="badge badge-simulated">Simulated GPS</span>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="card" style="max-width: 680px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">Profile Information</h2>
+            <button id="btn-signout" class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);">Sign Out</button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--muted); display: block;">NAME</span>
+              <strong id="p-name" style="font-size: 1.1rem;">-</strong>
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--muted); display: block;">EMAIL</span>
+              <span id="p-email">-</span>
+            </div>
+            <div>
+              <span style="font-size: 0.8rem; color: var(--muted); display: block;">ROLE</span>
+              <span id="p-role" class="badge badge-live">-</span>
+            </div>
+            <div id="student-only-fields" style="display: none; flex-direction: column; gap: 1rem;">
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">REGISTER NUMBER</span>
+                <span id="p-reg">-</span>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">TRANSPORT FEE STATUS</span>
+                <span id="p-fee" class="badge badge-paid">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div id="mobile-nav-container"></div>
+  </div>
+
+  <script type="module">
+    import { requireAuth, logout } from '/js/auth.js';
+    import { renderNavigation } from '/js/nav.js';
+
+    async function init() {
+      const user = await requireAuth();
+      if (!user) return;
+      renderNavigation('profile', user.role);
+
+      document.getElementById('p-name').textContent = user.name || (user.student ? user.student.name : user.email);
+      document.getElementById('p-email').textContent = user.email || (user.student ? user.student.email : '');
+      document.getElementById('p-role').textContent = user.role;
+
+      if (user.role === 'STUDENT' && user.student) {
+        document.getElementById('student-only-fields').style.display = 'flex';
+        document.getElementById('p-reg').textContent = user.student.regNo;
+        document.getElementById('p-fee').textContent = user.student.feeStatus;
+      }
+
+      document.getElementById('btn-signout').addEventListener('click', logout);
+    }
+
+    init();
+  </script>
+</body>
+</html>

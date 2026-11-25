@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Console — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    .tab-bar {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      background: none;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      color: var(--blue-700);
+      border-bottom-color: var(--blue-600);
+      font-weight: 600;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: var(--blue-50);
+      color: var(--blue-900);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-title">Transport Administration Console</div>
+        <div class="topbar-user">
+          <span class="badge" style="background: #FEE2E2; color: #B91C1C;">ROLE: ADMIN</span>
+          <span class="badge badge-simulated">Simulated GPS</span>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- Navigation Tabs -->
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="tab-simulation">Simulation Controls</button>
+          <button class="tab-btn" data-tab="tab-students">Students</button>
+          <button class="tab-btn" data-tab="tab-buses">Buses</button>
+          <button class="tab-btn" data-tab="tab-drivers">Drivers</button>
+          <button class="tab-btn" data-tab="tab-allocations">Allocations</button>
+          <button class="tab-btn" data-tab="tab-quality">Data Quality</button>
+          <button class="tab-btn" data-tab="tab-sessions">Session Revocation</button>
+        </div>
+
+        <!-- Simulation Controls Tab -->
+        <div id="tab-simulation" class="tab-pane active">
+          <div class="card">
+            <h3 class="card-title">GPS Simulation Engine</h3>
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+              Control tick execution, trip speed, and artificial delay per bus to demonstrate missed-bus and alternative-bus features.
+            </p>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+              <button id="btn-start-sim" class="btn btn-primary">▶ Start / Resume Simulation</button>
+              <button id="btn-stop-sim" class="btn btn-outline">⏸ Pause Simulation</button>
+            </div>
+
+            <div style="padding-top: 1rem; border-top: 1px solid var(--border); margin-bottom: 1.5rem;">
+              <label class="form-label">Simulation Speed Multiplier (1x to 60x):</label>
+              <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="btn btn-outline btn-speed" data-speed="1">1x (Real Time)</button>
+                <button class="btn btn-outline btn-speed" data-speed="10">10x (Demo Fast)</button>
+                <button class="btn btn-outline btn-speed" data-speed="30">30x (Very Fast)</button>
+                <button class="btn btn-outline btn-speed" data-speed="60">60x (Express)</button>
+              </div>
+            </div>
+
+            <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
+              <h4 style="font-size: 1rem; margin-bottom: 0.75rem;">Add Delay to Specific Bus (Missed Bus Scenario)</h4>
+              <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+                <div>
+                  <label class="form-label">Select Bus:</label>
+                  <select id="sel-delay-bus" class="form-select" style="min-width: 180px;">
+                    <option value="1">Bus TN-2</option>
+                    <option value="2">Bus TN-3</option>
+                    <option value="3">Bus TN-4</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Delay Minutes:</label>
+                  <input type="number" id="inp-delay-mins" class="form-select" value="10" min="0" max="60" style="width: 120px;">
+                </div>
+                <button id="btn-apply-delay" class="btn btn-primary">Apply Delay</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Students Tab -->
+        <div id="tab-students" class="tab-pane">
+          <div class="card">
+            <h3 class="card-title">Registered Students</h3>
+            <div style="overflow-x: auto;">
+              <table id="tbl-students">
+                <thead>
+                  <tr><th>Reg No</th><th>Name</th><th>Email</th><th>Fee Status</th><th>Transport</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buses Tab -->
+        <div id="tab-buses" class="tab-pane">
+          <div class="card">
+            <h3 class="card-title">University Buses</h3>
+            <div style="overflow-x: auto;">
+              <table id="tbl-buses">
+                <thead>
+                  <tr><th>Bus Number</th><th>Registration</th><th>Route</th><th>Driver</th><th>Status</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drivers Tab -->
+        <div id="tab-drivers" class="tab-pane">
+          <div class="card">
+            <h3 class="card-title">Drivers</h3>
+            <div style="overflow-x: auto;">
+              <table id="tbl-drivers">
+                <thead>
+                  <tr><th>ID</th><th>Name</th><th>Phone Number</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Allocations Tab -->
+        <div id="tab-allocations" class="tab-pane">
+          <div class="card">
+            <h3 class="card-title">Student Bus Allocations</h3>
+            <div style="overflow-x: auto;">
+              <table id="tbl-allocations">
+                <thead>
+                  <tr><th>Student Reg</th><th>Bus</th><th>Boarding Stop</th><th>Year</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Quality Tab -->
+        <div id="tab-quality" class="tab-pane">
+          <div class="card">
+            <h3 class="card-title">Transport Data Quality & Assumptions</h3>
+            <div class="alert-banner alert-warn" style="margin-top: 1rem;">
+              <span>⚠️</span>
+              <div>
+                <strong>Unverified Stop Match (Assumption in Section 2.3)</strong><br>
+                TN-4 timetable stop "Duggirala Gas Godown" is treated as canonical stop "Duggirala". Verify with transport office.
+              </div>
+            </div>
+
+            <h4 style="margin-top: 1.5rem; font-size: 1rem;">Pending / Auto-Geocoded Stops</h4>
+            <div style="overflow-x: auto;">
+              <table id="tbl-quality-stops">
+                <thead>
+                  <tr><th>Stop Name</th><th>Status</th><th>Source</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <h4 style="margin-top: 1.5rem; font-size: 1rem;">Probable Aliases (Student List Mappings)</h4>
+            <div style="overflow-x: auto;">
+              <table id="tbl-quality-aliases">
+                <thead>
+                  <tr><th>Student List Alias</th><th>Canonical Stop</th><th>Confidence</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sessions Tab -->
+        <div id="tab-sessions" class="tab-pane">
+          <div class="card">
+            <h3 class="card-title">Bulk Session Revocation</h3>
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+              Immediately revoke all active sessions of a student or admin across all devices.
+            </p>
+            <div style="display: flex; gap: 1rem; align-items: flex-end;">
+              <div style="flex: 1; max-width: 320px;">
+                <label class="form-label">Student Reg No or Email:</label>
+                <input type="text" id="inp-revoke-user" class="form-select" placeholder="e.g. AP26DEMO0001">
+              </div>
+              <button id="btn-revoke-user" class="btn btn-danger">Revoke All Sessions</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <div id="mobile-nav-container"></div>
+  </div>
+
+  <script type="module">
+    import { requireAuth } from '/js/auth.js';
+    import { renderNavigation } from '/js/nav.js';
+    import { apiRequest } from '/js/api.js';
+
+    async function init() {
+      const user = await requireAuth('ADMIN');
+      if (!user) return;
+      renderNavigation('admin', user.role);
+
+      // Tab switcher
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.tab).classList.add('active');
+        });
+      });
+
+      // Simulation controls
+      document.getElementById('btn-start-sim').addEventListener('click', async () => {
+        await apiRequest('/api/admin/simulation/start', { method: 'POST' });
+        alert('Simulation started');
+      });
+
+      document.getElementById('btn-stop-sim').addEventListener('click', async () => {
+        await apiRequest('/api/admin/simulation/stop', { method: 'POST' });
+        alert('Simulation paused');
+      });
+
+      document.querySelectorAll('.btn-speed').forEach(b => {
+        b.addEventListener('click', async () => {
+          const mult = parseFloat(b.dataset.speed);
+          await apiRequest('/api/admin/simulation/speed', {
+            method: 'POST',
+            body: JSON.stringify({ multiplier: mult })
+          });
+          alert(`Speed set to ${mult}x`);
+        });
+      });
+
+      document.getElementById('btn-apply-delay').addEventListener('click', async () => {
+        const busId = document.getElementById('sel-delay-bus').value;
+        const mins = parseInt(document.getElementById('inp-delay-mins').value, 10);
+        await apiRequest(`/api/admin/simulation/bus/${busId}/delay`, {
+          method: 'POST',
+          body: JSON.stringify({ minutes: mins })
+        });
+        alert(`Applied ${mins} min delay to Bus ${busId}`);
+      });
+
+      // Revoke session
+      document.getElementById('btn-revoke-user').addEventListener('click', async () => {
+        const user = document.getElementById('inp-revoke-user').value.trim();
+        if (!user) return;
+        await apiRequest('/api/admin/sessions/revoke', {
+          method: 'POST',
+          body: JSON.stringify({ regNoOrEmail: user })
+        });
+        alert(`Revoked sessions for ${user}`);
+      });
+
+      // Load tables
+      loadData();
+    }
+
+    async function loadData() {
+      try {
+        const students = await apiRequest('/api/admin/students');
+        document.querySelector('#tbl-students tbody').innerHTML = students.map(s => `
+          <tr><td>${s.regNo}</td><td>${s.name}</td><td>${s.email}</td><td><span class="badge ${s.feeStatus === 'PAID' ? 'badge-paid' : 'badge-pending'}">${s.feeStatus}</span></td><td>${s.transportActive ? 'Active' : 'Inactive'}</td></tr>
+        `).join('');
+
+        const buses = await apiRequest('/api/admin/buses');
+        document.querySelector('#tbl-buses tbody').innerHTML = buses.map(b => `
+          <tr><td><strong>Bus ${b.busNumber}</strong></td><td>${b.registrationNo}</td><td>${b.routeId}</td><td>${b.driver ? b.driver.name : 'N/A'}</td><td>${b.active ? 'Active' : 'Inactive'}</td></tr>
+        `).join('');
+
+        const drivers = await apiRequest('/api/admin/drivers');
+        document.querySelector('#tbl-drivers tbody').innerHTML = drivers.map(d => `
+          <tr><td>${d.driverId}</td><td>${d.name}</td><td>${d.phone}</td></tr>
+        `).join('');
+
+        const allocs = await apiRequest('/api/admin/allocations');
+        document.querySelector('#tbl-allocations tbody').innerHTML = allocs.map(a => `
+          <tr><td>${a.regNo}</td><td>${a.bus.busNumber}</td><td>${a.boardingStop.name}</td><td>${a.academicYear}</td></tr>
+        `).join('');
+
+        const quality = await apiRequest('/api/admin/data-quality');
+        document.querySelector('#tbl-quality-stops tbody').innerHTML = quality.pendingStops.map(s => `
+          <tr><td>${s.name}</td><td><span class="badge badge-pending">${s.geocodeStatus}</span></td><td>${s.geocodeSource || 'Pending Geocoder'}</td></tr>
+        `).join('');
+
+        document.querySelector('#tbl-quality-aliases tbody').innerHTML = quality.probableAliases.map(a => `
+          <tr><td>${a.aliasNormalized}</td><td>${a.stopName}</td><td><span class="badge badge-warn">${a.confidence}</span></td></tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

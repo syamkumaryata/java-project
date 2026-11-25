@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alternative Buses — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-title">Alternative Bus Finder</div>
+        <div class="topbar-user">
+          <span class="badge badge-simulated">Simulated GPS</span>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="card" style="background: var(--blue-50); border-color: var(--blue-100); margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-size: 1.25rem; color: var(--blue-900);">Missed Your Allocated Bus?</h2>
+              <p style="color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem;">
+                Find other eligible university buses that stop at your boarding point on their way to campus.
+              </p>
+            </div>
+            <button id="btn-refresh" class="btn btn-primary">
+              <span>🚨</span> I Missed My Bus (Find Alternatives)
+            </button>
+          </div>
+        </div>
+
+        <div id="alternatives-list" style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div id="empty-state" class="card" style="display: none; text-align: center; padding: 3rem 1.5rem;">
+          <div style="font-size: 2.5rem; margin-bottom: 1rem;">🚏</div>
+          <h3 style="color: var(--blue-900); margin-bottom: 0.5rem;">No Other Buses Available</h3>
+          <p style="color: var(--muted); max-width: 480px; margin: 0 auto;">
+            No other university bus serves your boarding stop right now. Please check standard public transit or contact the transport office.
+          </p>
+        </div>
+      </main>
+    </div>
+    <div id="mobile-nav-container"></div>
+  </div>
+
+  <script type="module">
+    import { requireAuth } from '/js/auth.js';
+    import { renderNavigation } from '/js/nav.js';
+    import { apiRequest } from '/js/api.js';
+
+    async function loadAlternatives() {
+      const list = document.getElementById('alternatives-list');
+      const empty = document.getElementById('empty-state');
+      list.innerHTML = '<div class="card">Searching for approaching university buses...</div>';
+
+      try {
+        const alternatives = await apiRequest('/api/student/alternatives');
+        if (!alternatives || alternatives.length === 0) {
+          list.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+
+        empty.style.display = 'none';
+        list.innerHTML = alternatives.map(b => `
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <span class="badge badge-live">SAME STOP MATCH</span>
+                <span class="badge badge-simulated" style="margin-left: 0.5rem;">SIMULATED GPS</span>
+                <h3 style="font-size: 1.25rem; color: var(--blue-900); margin-top: 0.5rem;">${b.displayBusNumber} (${b.routeId})</h3>
+                <span style="font-size: 0.85rem; color: var(--muted);">Registration: <strong>${b.registrationNo}</strong></span>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">APPROXIMATE ETA</span>
+                <strong style="font-size: 1.5rem; color: var(--ok);">${b.etaToStopMinutes} min</strong>
+              </div>
+            </div>
+
+            <div class="grid-3" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">DRIVER</span>
+                <strong>${b.driverName || 'N/A'}</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">DRIVER CONTACT</span>
+                <a href="tel:${b.driverPhone || ''}" style="color: var(--blue-600); text-decoration: none; font-weight: 500;">📞 ${b.driverPhone || 'N/A'}</a>
+              </div>
+              <div>
+                <span style="font-size: 0.8rem; color: var(--muted); display: block;">DESTINATION</span>
+                <strong>${b.destination}</strong>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="alert-banner alert-danger">Failed to load alternatives: ${err.message}</div>`;
+      }
+    }
+
+    async function init() {
+      const user = await requireAuth('STUDENT');
+      if (!user) return;
+      renderNavigation('alternatives', user.role);
+
+      document.getElementById('btn-refresh').addEventListener('click', loadAlternatives);
+      loadAlternatives();
+    }
+
+    init();
+  </script>
+</body>
+</html>

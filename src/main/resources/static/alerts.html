@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arrival Alerts — College Bus Tracking System</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-container">
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-title">Arrival Alerts & Alarms</div>
+        <div class="topbar-user">
+          <span class="badge badge-simulated">Simulated GPS</span>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="card" style="max-width: 680px; margin: 0 auto;">
+          <div class="card-header">
+            <h2 class="card-title">Customizable Arrival Alert</h2>
+            <span class="badge badge-live">Web Audio API</span>
+          </div>
+
+          <p style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Configure an audible arrival chime and push notification when your allocated university bus approaches your boarding stop.
+          </p>
+
+          <form id="alert-form">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+              <div>
+                <strong>Enable Arrival Alarm</strong>
+                <p style="font-size: 0.85rem; color: var(--muted);">Triggers when bus crosses your time threshold</p>
+              </div>
+              <input type="checkbox" id="chk-enabled" style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
+
+            <div style="padding: 1.25rem 0; border-bottom: 1px solid var(--border);">
+              <label class="form-label">Alert Me Before Arrival:</label>
+              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="minutesBefore" value="5"> 5 Minutes
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="minutesBefore" value="10" checked> 10 Minutes
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <input type="radio" name="minutesBefore" value="15"> 15 Minutes
+                </label>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border);">
+              <div>
+                <strong>Audible Alarm Sound</strong>
+                <p style="font-size: 0.85rem; color: var(--muted);">Plays synthesised audio tone in browser</p>
+              </div>
+              <input type="checkbox" id="chk-sound" checked style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+              <button type="submit" class="btn btn-primary">Save Settings</button>
+              <button type="button" id="btn-enable-audio" class="btn btn-outline">🔊 Unlock Audio</button>
+              <button type="button" id="btn-test-alarm" class="btn btn-outline">🔔 Test Alarm Tone</button>
+              <button type="button" id="btn-notification-perm" class="btn btn-outline">📩 Allow Notifications</button>
+            </div>
+          </form>
+
+          <div id="audio-status" style="margin-top: 1.25rem; font-size: 0.85rem; color: var(--muted);">
+            Audio status: Checking...
+          </div>
+        </div>
+      </main>
+    </div>
+    <div id="mobile-nav-container"></div>
+  </div>
+
+  <script type="module">
+    import { requireAuth } from '/js/auth.js';
+    import { renderNavigation } from '/js/nav.js';
+    import { apiRequest } from '/js/api.js';
+    import { initAudio, playAlarmTone, requestNotificationPermission } from '/js/alarm.js';
+
+    async function init() {
+      const user = await requireAuth('STUDENT');
+      if (!user) return;
+      renderNavigation('alerts', user.role);
+
+      const chkEnabled = document.getElementById('chk-enabled');
+      const chkSound = document.getElementById('chk-sound');
+      const audioStatus = document.getElementById('audio-status');
+
+      try {
+        const settings = await apiRequest('/api/student/alerts');
+        chkEnabled.checked = settings.enabled;
+        chkSound.checked = settings.soundEnabled;
+        const radio = document.querySelector(`input[name="minutesBefore"][value="${settings.minutesBefore}"]`);
+        if (radio) radio.checked = true;
+      } catch (err) {
+        console.error(err);
+      }
+
+      document.getElementById('btn-enable-audio').addEventListener('click', () => {
+        const active = initAudio();
+        audioStatus.textContent = active ? '✅ Audio unlocked and ready to sound alarm.' : '⚠️ Audio blocked by browser interaction policy.';
+      });
+
+      document.getElementById('btn-test-alarm').addEventListener('click', () => {
+        playAlarmTone(5);
+      });
+
+      document.getElementById('btn-notification-perm').addEventListener('click', async () => {
+        const perm = await requestNotificationPermission();
+        alert('Browser notification status: ' + perm);
+      });
+
+      document.getElementById('alert-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const minutesBefore = parseInt(document.querySelector('input[name="minutesBefore"]:checked').value, 10);
+        try {
+          await apiRequest('/api/student/alerts', {
+            method: 'PUT',
+            body: JSON.stringify({
+              enabled: chkEnabled.checked,
+              minutesBefore,
+              soundEnabled: chkSound.checked
+            })
+          });
+          alert('Alert settings saved successfully!');
+        } catch (err) {
+          alert('Failed to save settings: ' + err.message);
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
